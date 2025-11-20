@@ -1,70 +1,77 @@
-# DIESEL KIDS ファッションアイテム監視エージェント
+はい、承知いたしました。
+優秀なエンジニアとして、`agents/fasion_diesel_kids` ディレクトリ専用の `README.md` を作成します。
 
-このディレクトリには、DIESEL KIDSのアウトレット商品の中から特定のサイズのアイテムを自動で検出し、Discordに通知するエージェントが含まれています。
+---
 
-## 🚀 機能詳細と目的
+# DIESEL KIDS アウトレット商品監視エージェント
 
-このエージェントの主な目的は以下の通りです。
+このディレクトリには、DIESEL KIDSのアウトレット商品の中から特定のサイズ（14Yまたは16Y）を持つアイテムを検出し、Discordに通知するエージェントが格納されています。
 
-1.  **Yahoo!ショッピングの商品リンク収集**:
-    Yahoo!ショッピングの「DIESEL KIDS アウトレット」検索結果ページを巡回し、存在するすべての商品詳細ページのURLを自動で収集します。これにより、最新のアイテム情報を網羅的に取得します。
+## 🎯 エージェントの機能と目的
 
-2.  **AIによるサイズ選定**:
-    収集した各商品リンクにアクセスし、[Playwright](https://playwright.dev/) を用いてページのテキストコンテンツを抽出します。抽出したテキストは [Google Gemini](https://ai.google.dev/models/gemini) モデルに渡され、その商品に「**14Y**」または「**16Y**」のサイズが利用可能かどうかを高度な自然言語処理で判断させます。
+このエージェントは、主に以下の目的と機能を提供します。
 
-3.  **Discord通知**:
-    AIによって特定された「14Y」または「16Y」のサイズがある商品の一覧を、Discordの指定されたチャンネルに自動で通知します。これにより、ユーザーは希望するサイズのアイテムが新たに入荷・発見された際に迅速に情報を得ることができます。
+*   **商品リンクの自動収集**: Yahoo!ショッピングの「DIESEL KIDS アウトレット」検索結果ページを定期的に巡回し、存在するすべての商品詳細ページへのリンクを自動的に収集します。
+*   **AIによるサイズ判断**: 収集した各商品リンクにアクセスし、Google Gemini (LLM) を利用してページコンテンツを解析します。その商品に「14Y」または「16Y」のサイズが利用可能かどうかを判断します。
+*   **Discordへの通知**: AIの判断により指定されたサイズが利用可能とされた商品のみを抽出し、設定されたDiscordチャンネルにその商品リンク一覧を即座に通知します。
+*   **ターゲットユーザー**: 大人の女性が着用可能な大きめサイズのDIESEL KIDSアイテムを探しているユーザー（主に自分自身）を主なターゲットとしています。
 
-## 🛠️ 実行方法
+## 🚀 実行方法
 
-このエージェントは、プロジェクトのルートディレクトリから以下のコマンドで実行できます。
+このエージェントを実行するには、まず依存関係をインストールし、必要な環境変数を設定する必要があります。
+
+### 1. 依存関係のインストール
+
+プロジェクトのルートディレクトリで、`requirements.txt` に基づいて必要なライブラリをインストールします。
+
+bash
+pip install -r requirements.txt
+playwright install
+
+
+### 2. 環境変数の設定
+
+プロジェクトのルートディレクトリに `.env` ファイルを作成し、以下の環境変数を設定してください。
+
+dotenv
+# Google Gemini APIキー
+GOOGLE_AI_STUDIO_API_KEY="YOUR_GOOGLE_GEMINI_API_KEY"
+
+# Discord Webhook URL（通知先）
+DISCORD_WEBHOOK_URL="YOUR_DISCORD_WEBHOOK_URL"
+
+
+### 3. エージェントの実行
+
+以下のコマンドをプロジェクトのルートディレクトリから実行することで、エージェントを起動できます。
 
 bash
 python agents/fasion_diesel_kids/main.py
 
 
-### 事前準備:
+実行後、指定されたサイズのDIESEL KIDSアウトレット商品が見つかると、Discordに通知が送信されます。
 
-1.  **環境変数の設定**:
-    プロジェクトのルートディレクトリに `.env` ファイルを作成し、以下の環境変数を設定してください。
-    -   `GOOGLE_AI_STUDIO_API_KEY`: Google Gemini APIにアクセスするためのAPIキー。
-    -   `DISCORD_WEBHOOK_URL`: Discordの通知を送りたいチャンネルのWebhook URL。
+## 🔗 依存している共通モジュール (`common/`)
 
-    `.env` ファイルの例:
-    
-    GOOGLE_AI_STUDIO_API_KEY="YOUR_GEMINI_API_KEY"
-    DISCORD_WEBHOOK_URL="YOUR_DISCORD_WEBHOOK_URL"
-    
+このエージェントは、プロジェクト内の共通モジュールを活用して効率的に動作しています。
 
-2.  **依存ライブラリのインストール**:
-    プロジェクトルートで `requirements.txt` に記載されているライブラリをインストールしてください。
-    bash
-    pip install -r requirements.txt
-    playwright install
-    
-    `playwright install` コマンドは、Playwrightが動作するために必要なブラウザエンジンをダウンロードします。
+*   `common/scrapers/yahoo.py`:
+    *   Yahoo!ショッピングの検索結果ページをPlaywrightを用いてスクレイピングし、商品詳細ページのURLを効率的に収集する役割を担います。多ページにわたる検索結果のリンク収集を自動化しており、このエージェントのデータソースとなります。
+*   `common/discord.py`:
+    *   AIによって選定された商品情報を、指定されたDiscord Webhook URLに整形されたメッセージとして送信します。通知のフォーマット（タイトル、リスト形式）が共通化されており、簡潔かつ視覚的に分かりやすい通知を実現しています。
 
-## 🔗 依存共通モジュール
+## 📁 ファイル構成
 
-このエージェントは、プロジェクト内の `common/` ディレクトリに定義されている以下の共通モジュールに依存しています。
-
--   `common/scrapers/yahoo.py`:
-    Yahoo!ショッピングからの商品リンク収集機能を提供します。特に `fetch_yahoo_links_playwright` 関数は、Playwrightを使用してYahoo!ショッピングの検索結果ページから商品リンクを効率的に収集する役割を担っています。
-
--   `common/discord.py`:
-    Discordへの通知送信機能を提供します。`send_discord_notification` 関数は、特定のWebhook URLへ、指定された商品URLリストを整形して通知する際に使用されます。
-
-これらの共通モジュールは、`sys.path.append` を用いて動的にパスに追加され、`main.py` からインポートされて利用されます。
-
-## 📂 ファイル構成
-
-`agents/fasion_diesel_kids/` ディレクトリは以下のファイルで構成されています。
+このエージェントディレクトリの主要なファイル構成は以下の通りです。
 
 
 agents/
 └── fasion_diesel_kids/
-    ├── main.py         # このエージェントのメイン処理ロジック
-    └── __init__.py     # Pythonパッケージとして認識させるための空ファイル
+    ├── main.py
+    └── __init__.py
 
 
--   `main.py`: 前述の通り、Yahoo!ショッピングからの商品リンク収集、AIによるサイズ選定、そしてDiscord通知の全フローを orchestrate する中心的なスクリプトです。
+*   `main.py`:
+    *   このエージェントのメインの実行スクリプトです。Yahoo!ショッピングからの商品リンク収集、AI (Google Gemini) によるサイズ判断、そしてDiscordへの通知という一連のワークフローをオーケストレーションします。
+*   `__init__.py`:
+    *   `fasion_diesel_kids` ディレクトリがPythonパッケージとして認識されるために必要な空のファイルです。
