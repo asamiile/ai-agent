@@ -38,11 +38,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # 変更がある場合のみコミット
-          if [[ -n $(git status --porcelain README.md) ]]; then
-            git add README.md
-            git commit -m "docs: AIによるREADME自動更新"
+
+          # 全階層のMarkdownファイルの変更を確認してステージング
+          git add "**/*.md"
+
+          # ステージングされた変更があるか確認
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: AIによる全エージェントのREADME一括更新"
             git push
+            echo "READMEs have been updated and pushed."
           else
-            echo "No changes to README.md"
+            echo "No changes to any README.md"
           fi
