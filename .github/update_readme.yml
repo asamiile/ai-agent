@@ -1,0 +1,48 @@
+name: Update README
+
+on:
+  # 手動実行
+  workflow_dispatch:
+  # コードが変更されたら自動実行（必要に応じて有効化）
+  # push:
+  #   branches: [ main ]
+  #   paths: [ 'agents/**', 'common/**' ]
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    # リポジトリへの書き込み権限を付与
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv pip install --system google-generativeai
+
+      - name: Generate README
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: python agents/tech_readme_updater/main.py
+
+      - name: Commit and Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # 変更がある場合のみコミット
+          if [[ -n $(git status --porcelain README.md) ]]; then
+            git add README.md
+            git commit -m "docs: AIによるREADME自動更新"
+            git push
+          else
+            echo "No changes to README.md"
+          fi
