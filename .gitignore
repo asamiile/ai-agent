@@ -22,4 +22,5 @@ env/
 .idea/
 
 # Agent
-.gemini/
+.gemini/*
+!.gemini/settings.json
