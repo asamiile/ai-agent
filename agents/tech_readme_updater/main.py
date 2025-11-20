@@ -6,9 +6,9 @@ import google.generativeai as genai
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 
 # APIキーの設定 (GitHub ActionsのSecretsから読み込む)
-API_KEY = os.environ.get("GOOGLE_API_KEY")
+API_KEY = os.environ.get("GOOGLE_AI_STUDIO_API_KEY")
 if not API_KEY:
-    print("Skipping: GOOGLE_API_KEY is not set.")
+    print("Skipping: GOOGLE_AI_STUDIO_API_KEY is not set.")
     sys.exit(0) # エラーにせず終了（ローカル誤爆防止）
 
 genai.configure(api_key=API_KEY)
