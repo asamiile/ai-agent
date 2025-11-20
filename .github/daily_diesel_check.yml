@@ -1,0 +1,40 @@
+name: AI Agent - Diesel Kids Check
+
+on:
+  schedule:
+    # 日本時間 金曜 19:00 (UTC 10:00) に実行
+    - cron: '0 10 * * 5'
+  # GitHub画面から手動で実行できるようにする
+  workflow_dispatch:
+
+jobs:
+  run-diesel-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15 # 万が一の暴走防止（15分で強制停止）
+
+    steps:
+      # 1. リポジトリのコードをチェックアウト
+      - name: ソースコードを取得
+        uses: actions/checkout@v4
+
+      # 2. Python環境のセットアップ
+      - name: Python 3.11 セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 3. ライブラリとブラウザのインストール
+      - name: 依存ライブラリとPlaywrightブラウザのインストール
+        run: |
+          pip install uv
+          uv pip install --system requests playwright google-generativeai          
+          playwright install --with-deps chromium
+
+      # 4. エージェントの実行
+      - name: エージェントを実行
+        env:
+          # GitHub Secrets に登録したキーを環境変数としてセット
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          PYTHONPATH=. python agents/fashion_diesel_kids/main.py
