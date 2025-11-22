@@ -93,6 +93,7 @@ CODING_PROMPT = """
             # Good: Use filter for links with partial text
             expect(page.locator("a").filter(has_text="More information")).to_be_visible()
 
+
             # Good: Use to_contain_text without exact parameter
             expect(page.get_by_role("heading")).to_contain_text("Example")
         except Error as e:
@@ -101,4 +102,65 @@ CODING_PROMPT = """
 
 ## 前提となるテストシナリオ
 {test_plan}
+"""
+
+# テストコードを修正するためのプロンプト
+FIXING_PROMPT = """
+あなたはPlaywrightテストのデバッグ専門家です。
+失敗したテストコードとエラーログを分析し、修正版のコードを生成してください。
+
+## 失敗したテストコード
+```python
+{code}
+```
+
+## エラーログ
+```
+{error_log}
+```
+
+## 修正の指針
+1. **エラーの種類を分析してください**:
+   - `TimeoutError`: 待機時間が不足している、または要素が見つからない
+   - `Element not found`: セレクタが間違っている、または要素が動的に生成される
+   - `Target closed`: ページ遷移やポップアップの処理が不適切
+   - `Execution context was destroyed`: ページリロードやナビゲーションのタイミング問題
+   - `SyntaxError`: Python構文エラー（JavaScript構文を使用していないか確認）
+
+2. **修正可能な項目**:
+   - セレクタの変更 (例: `get_by_role` → `get_by_text` または `locator().filter()`)
+   - 待機処理の追加・調整 (例: `wait_for_selector`, `wait_for_load_state`)
+   - タイムアウト値の増加
+   - 要素の可視性チェックの追加
+   - ページ遷移後の待機処理
+
+3. **絶対に変更してはいけない項目**:
+   - アサーションの期待値 (例: `expect(...).to_have_text("A")` の "A" を変更してはいけない)
+   - テストの目的や意図
+   - テストケースの削除
+
+4. **重要な構文ルール**:
+   - **Python構文のみを使用してください。JavaScript構文は禁止です。**
+   - 正規表現は `re.compile("pattern", re.IGNORECASE)` を使用してください
+   - **禁止**: `/pattern/i` のようなJavaScript正規表現リテラル
+   - **正しい例**: `expect(page).to_have_title(re.compile("Example", re.IGNORECASE))`
+   - **間違った例**: `expect(page).to_have_title(/Example/i)`
+
+5. **出力形式**:
+   - 修正後のコード全体を、Markdownのコードブロック形式で出力してください
+   - コメントで修正箇所を説明してください
+   - 例:
+     ```python
+     # 修正後のコード
+     import os
+     import re
+     import pytest
+     ...
+     ```
+
+## 重要な注意事項
+- アサーションエラーの場合、期待値を変更して無理やり通すことは絶対に禁止です
+- テストの意図を保ちながら、技術的な問題のみを修正してください
+- 修正できない場合は、元のコードをそのまま返してください
+- **必ずPython構文を使用してください。JavaScript構文は使用しないでください。**
 """

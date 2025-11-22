@@ -121,6 +121,43 @@ def run_test(filepath: str):
         print(f"❌ テスト実行中にエラーが発生しました: {e}")
         return 1, "", str(e)
 
+def heal_test_code(filepath: str, error_log: str) -> bool:
+    """失敗したテストコードをAIで修正する"""
+    import re
+    from prompts import FIXING_PROMPT
+
+    try:
+        # 元のテストコードを読み込む
+        with open(filepath, "r", encoding="utf-8") as f:
+            original_code = f.read()
+
+        # AIに修正を依頼
+        fixing_prompt = FIXING_PROMPT.format(code=original_code, error_log=error_log)
+        response = model.generate_content(fixing_prompt)
+
+        if not response or not response.text:
+            print("❌ AIからの応答が空です")
+            return False
+
+        # Markdownコードブロックから実際のコードを抽出
+        code_match = re.search(r'```python\n(.*?)\n```', response.text, re.DOTALL)
+        if not code_match:
+            print("❌ AIの応答からコードを抽出できませんでした")
+            return False
+
+        fixed_code = code_match.group(1)
+
+        # 修正後のコードでファイルを上書き
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(fixed_code)
+
+        print("🔄 AIがテストコードを修正しました。再実行します...")
+        return True
+
+    except Exception as e:
+        print(f"❌ 修復中にエラーが発生しました: {e}")
+        return False
+
 def generate_report(url: str, plan: str, retcode: int, stdout: str, stderr: str, save_dir: str, filename: str = "report.md"):
     """テスト結果のレポート(Markdown)を作成する"""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -259,8 +296,32 @@ if __name__ == "__main__":
                 f.write(code)
             print(f"✅ テストコード保存: {filename}")
 
-            # テスト実行
-            retcode, stdout, stderr = run_test(filepath)
+            # テスト実行（リトライループ付き）
+            MAX_RETRIES = 3
+            retcode, stdout, stderr = None, None, None
+
+            for attempt in range(MAX_RETRIES):
+                retcode, stdout, stderr = run_test(filepath)
+
+                if retcode == 0:
+                    # 成功 - ループを抜ける
+                    break
+
+                # 失敗時の処理
+                if "AssertionError" in stderr:
+                    # AssertionErrorは修復しない（アプリのバグの可能性）
+                    print("⚠️ AssertionErrorのため、修復をスキップします（アプリのバグの可能性があります）")
+                    break
+
+                # その他のエラーは修復を試みる
+                if attempt < MAX_RETRIES - 1:
+                    print(f"🔧 テスト失敗 (試行 {attempt + 1}/{MAX_RETRIES}). 修復を試みます...")
+                    if not heal_test_code(filepath, stderr):
+                        print("❌ 修復に失敗しました")
+                        break
+                else:
+                    print(f"❌ 最大リトライ回数に達しました ({MAX_RETRIES}回)")
+
             status = "PASS" if retcode == 0 else "FAIL"
 
             # レポート生成
