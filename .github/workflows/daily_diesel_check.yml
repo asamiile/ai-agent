@@ -27,7 +27,7 @@ jobs:
       - name: 依存ライブラリとPlaywrightブラウザのインストール
         run: |
           pip install uv
-          uv pip install --system requests playwright google-generativeai
+          uv pip install --system requests playwright google-generativeai python-dotenv
           playwright install --with-deps chromium
 
       # 4. エージェントの実行
