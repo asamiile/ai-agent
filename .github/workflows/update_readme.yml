@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -32,7 +32,18 @@ jobs:
       - name: Generate README
         env:
           GOOGLE_AI_STUDIO_API_KEY: ${{ secrets.GOOGLE_AI_STUDIO_API_KEY }}
-        run: python agents/tech_readme_updater/main.py
+        run: |
+          echo "Starting README generation..."
+          python agents/tech_readme_updater/main.py
+          echo "README generation completed."
+
+      - name: Show generated files
+        run: |
+          echo "=== Root README.md ==="
+          head -50 README.md || echo "README.md not found"
+          echo ""
+          echo "=== Changed files ==="
+          git status --short
 
       - name: Commit and Push
         run: |
