@@ -1,53 +1,55 @@
 # common/
 
 ## 概要
-このディレクトリは、プロジェクト内の様々なエージェントやモジュールから共通して利用される汎用的なユーティリティ機能や基盤となるモジュール群を提供します。具体的には、外部サービスへの通知機能や、複数のウェブサイトに対応したスクレイピング機能などが含まれます。これにより、コードの再利用性を高め、各エージェントの責務をシンプルに保つことを目的としています。
+`common/` ディレクトリは、プロジェクト全体で再利用される共通のユーティリティ関数やモジュールを格納する場所です。Discord通知機能、Webスクレイピングのロジック（Yahoo!ショッピング、ZOZOTOWN）、および関連するサブパッケージが含まれており、各エージェントが特定のタスクを効率的に実行するために利用します。
 
 ## ディレクトリ構成
 
 
 common/
 ├── discord.py
-└── scrapers/
-    ├── __init__.py
-    ├── yahoo.py
-    └── zozo.py
+├── scrapers/
+│   ├── __init__.py
+│   ├── yahoo.py
+│   └── zozo.py
+└── __init__.py
 
 
 ## 各ファイル/モジュールの説明
 
-| ファイル/モジュール名 | 概要 | 主要機能/関数 | 依存関係 | 備考 |
-| :-------------------- | :--- | :------------ | :------- | :--- |
-| `discord.py`          | Discordへの通知送信機能を提供します。 | `send_discord_notification(webhook_url: str, items: list[str])`: 商品URLリストをDiscordに通知します。 | `requests`, `json` | 主に他のエージェントからのインポート利用を想定しています。 |
-| `scrapers/`           | 各種ウェブサイトからの情報収集（スクレイピング）に関するモジュール群を格納します。 | - | - | - |
-| `scrapers/yahoo.py`   | Playwrightを使用してYahoo!ショッピングから商品リンクを収集します。複数ページにわたる自動スクレイピングに対応しています。 | `fetch_yahoo_links_playwright(target_url: str) -> set[str]`: 指定されたYahoo!ショッピングの検索結果URLから商品詳細ページのURLを収集します。 | `playwright` | `agents/fashion_diesel_kids/main.py` で利用されています。単体で実行することも可能です。 |
-| `scrapers/zozo.py`    | PlaywrightとBeautifulSoupを使用してZOZOTOWNの商品リンク収集を試みます。自動化検知を回避するためのスクリプト挿入を試みていますが、現状ではアクセス困難です。 | `fetch_product_links_playwright(target_url: str) -> set[str]`: 指定されたZOZOTOWNのURLから商品リンクを収集します（アクセス成功した場合）。 | `playwright`, `bs4`, `urllib.parse` | 現在は `Access Denied` によりアクセスが困難であることがコード内で明記されています。単体で実行することも可能です。 |
+| ファイル/モジュール           | 目的・機能                                                                                                                                                                                                                                                                                                  |
+| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `__init__.py`               | Pythonパッケージとして `common` ディレクトリを認識させるためのファイルです。                                                                                                                                                                                                                                |
+| `discord.py`                | Discordのウェブフックを利用して、指定されたアイテムのURLリストを通知メッセージとして送信する機能を提供します。商品URLのリストを受け取り、フォーマットされたメッセージを作成してDiscordチャンネルに送信します。`agents/fashion_diesel_kids/main.py` などで利用されます。                                         |
+| `scrapers/`                 | 各ECサイトからの情報収集（スクレイピング）に関連するモジュールをまとめたサブパッケージです。                                                                                                                                                                                                                |
+| `scrapers/__init__.py`      | `scrapers` サブディレクトリをPythonパッケージとして認識させるためのファイルです。                                                                                                                                                                                                                           |
+| `scrapers/yahoo.py`         | [Playwright](https://playwright.dev/python/docs/api/class-playwright) を使用してYahoo!ショッピングの検索結果ページから商品リンクを収集します。指定された検索結果URLにアクセスし、特定のCSSセレクタに基づいてページ内の全商品リンクを抽出します。複数ページにわたるリンク収集に対応しています。`agents/fashion_diesel_kids/main.py` で利用されます。 |
+| `scrapers/zozo.py`          | PlaywrightとBeautifulSoupを使用してZOZOTOWNから商品リンクを収集します。Playwrightの `page.add_init_script()` を用いて `navigator.webdriver` プロパティを無効化し、自動化検知を回避しようと試みます。取得したHTMLをBeautifulSoupで解析し、商品リンクを抽出します。 (※ 現状、ZOZOTOWNへのアクセスは困難であることがコード内で示唆されています。) |
 
-## 実行方法
+## 実行方法 (該当する場合)
 
-`common/` ディレクトリ内のモジュールは、主に他のエージェントや上位のロジックからインポートされて使用される共通部品です。
+このディレクトリ内のファイルは、主に他のスクリプトやエージェントからインポートされて使用される共通ユーティリティモジュールです。そのため、直接実行される `main.py` のようなファイルは存在しません。
 
-ただし、`common/scrapers/` 配下のスクレイピングモジュールは、開発やテストのために単体で実行できる `if __name__ == "__main__":` ブロックを持っています。
+ただし、`common/scrapers/yahoo.py` と `common/scrapers/zozo.py` には `if __name__ == "__main__":` ブロックが含まれており、それぞれ単体で実行して動作を確認することが可能です。
 
-### `common/scrapers/yahoo.py` の実行例
+### Yahoo!ショッピングスクレイパーの単体実行例
+
+このコマンドは、「ディーゼルキッズ アウトレット」の検索結果を複数ページにわたってスクレイピングし、収集した商品リンクをコンソールに出力します。
 
 bash
 python common/scrapers/yahoo.py
 
 
-このコマンドを実行すると、Yahoo!ショッピングから「ディーゼルキッズ アウトレット」の検索結果を複数ページにわたってスクレイピングし、収集した商品リンクをコンソールに出力します。
+### ZOZOTOWNスクレイパーの単体実行例
 
-### `common/scrapers/zozo.py` の実行例
+このコマンドは、「DIESEL KIDS」ブランドページから商品リンクを収集しようと試みます。
 
 bash
 python common/scrapers/zozo.py
 
 
-このコマンドを実行すると、ZOZOTOWNの「DIESEL KIDS」ブランドページから商品リンクの収集を試みます。ただし、コードのコメントにもあるように、現在は「Access Denied」により成功しない可能性が高いです。
+## 環境変数 (該当する場合)
 
-## 環境変数
+`common/discord.py` モジュール自体は直接環境変数を読み込みませんが、このモジュールを呼び出す側のスクリプト（例: `agents/fashion_diesel_kids/main.py`）は、Discord通知のために以下の環境変数を必要とします。
 
-`common/` ディレクトリ内のモジュール自体は直接環境変数を読み込みません。
-
-- `common/discord.py` が必要とするDiscordのWebhook URL (`webhook_url`) は、この関数を呼び出す側のモジュール（例: `agents/fashion_diesel_kids/main.py`）で環境変数 `DISCORD_WEBHOOK_URL` から読み込まれ、引数として渡されます。
-- `common/scrapers/` 配下のモジュールは、ウェブブラウザ自動化ライブラリであるPlaywrightを利用しますが、Playwright自体の設定（例: ブラウザバイナリのパスなど）は、Playwrightライブラリのドキュメントを参照してください。
+*   `DISCORD_WEBHOOK_URL`: Discordへの通知に使用するウェブフックのURL。

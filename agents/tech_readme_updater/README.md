@@ -1,10 +1,9 @@
-# tech_readme_updater
+# agents/tech_readme_updater/
 
 ## 概要
-このディレクトリには、リポジトリ内の`README.md`ファイルを自動生成・更新するAIエージェントが含まれています。`google-generativeai` (Gemini) を利用して、指定されたディレクトリのコードベースを解析し、要件に基づいたマークダウン形式の`README.md`ファイルを生成します。プロジェクト全体のルート`README.md`と、`agents/`および`common/`配下にあるPythonファイルを含む各サブディレクトリの`README.md`の生成・更新を調整します。
+このディレクトリには、AIモデル（Google Gemini）を活用してプロジェクト内の `README.md` ファイルを自動的に生成および更新するエージェントが格納されています。リポジトリ全体のコードベースを解析し、Pythonファイルが存在する各ディレクトリに対して、その目的、機能、構成などを記述したREADMEファイルを作成または更新します。これにより、ドキュメント作成の負担を軽減し、コードベースの変更に合わせて常に最新のREADMEを維持することを目指します。
 
 ## ディレクトリ構成
-
 
 agents/tech_readme_updater/
 ├── main.py
@@ -15,20 +14,29 @@ agents/tech_readme_updater/
 
 | ファイル名 | 説明 |
 | :--------- | :--- |
-| `main.py` | このエージェントの主要な実行スクリプトです。リポジトリ内のコードベースを読み込み、`google-generativeai`モデルに`README.md`の生成を依頼し、結果を対応するディレクトリに書き込みます。ルートの`README.md`と、Pythonファイルを含むすべてのサブディレクトリの`README.md`の生成・更新を調整します。 |
+| `main.py`  | このエージェントのメインスクリプトです。リポジトリ内のPythonファイルが存在するすべてのディレクトリを走査し、各ディレクトリおよびプロジェクトルートの `README.md` を生成または更新します。Gemini APIを呼び出してコンテンツを生成し、ファイルシステムに書き込みます。 |
 
 ## 実行方法
 
-このエージェントは、以下のコマンドで実行できます。`main.py`は、プロジェクトルートと、`agents/`および`common/`配下にあるPythonファイルを含むすべてのサブディレクトリの`README.md`を自動的に更新します。
+このエージェントは、以下のコマンドで直接実行できます。
 
 bash
 python agents/tech_readme_updater/main.py
 
 
+**注意点:**
+- 実行前に、後述の環境変数を設定してください。
+- スクリプトはプロジェクトルートから相対パスでファイルを探索し、READMEを生成します。
+
 ## 環境変数
 
-このエージェントの実行には、以下の環境変数を設定する必要があります。
+`main.py` の実行には、以下の環境変数の設定が必要です。
 
-| 環境変数名 | 説明 |
-| :--------- | :--- |
-| `GOOGLE_AI_STUDIO_API_KEY` | Google AI Studio (Gemini API) にアクセスするためのAPIキーです。`genai.configure(api_key=API_KEY)` を通じてモデル認証に使用されます。 |
+| 環境変数名                | 説明                                         | 必須 |
+| :------------------------ | :------------------------------------------- | :--- |
+| `GOOGLE_AI_STUDIO_API_KEY` | Google AI Studio（Gemini API）にアクセスするためのAPIキーです。 | はい |
+
+`.env` ファイルに以下のように記述して設定することをお勧めします。
+
+dotenv
+GOOGLE_AI_STUDIO_API_KEY="your_google_ai_studio_api_key_here"
