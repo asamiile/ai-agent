@@ -1,52 +1,34 @@
-`agents/tech_readme_updater` ディレクトリ専用の `README.md` を作成します。
+# tech_readme_updater
+
+## 概要
+このディレクトリには、リポジトリ内の`README.md`ファイルを自動生成・更新するAIエージェントが含まれています。`google-generativeai` (Gemini) を利用して、指定されたディレクトリのコードベースを解析し、要件に基づいたマークダウン形式の`README.md`ファイルを生成します。プロジェクト全体のルート`README.md`と、`agents/`および`common/`配下にあるPythonファイルを含む各サブディレクトリの`README.md`の生成・更新を調整します。
+
+## ディレクトリ構成
 
 
-# `agents/tech_readme_updater`
+agents/tech_readme_updater/
+├── main.py
+└── README.md (このファイル)
 
-## 機能と目的
 
-このエージェントは、プロジェクト内のコードベース全体を解析し、ルートディレクトリの `README.md` と、`agents/` ディレクトリ配下にある各エージェントの `README.md` を自動で生成・更新することを目的としています。
+## 各ファイル/モジュールの説明
 
-主な機能は以下の通りです。
-
-1.  **リポジトリファイル読み込み**: `read_repository_files()` 関数が、`.git`、`.venv`、`__pycache__` などの不要なディレクトリを除外し、`.py`、`.md`、`.yml`、`.json`、`.txt` などの主要なコードおよびドキュメントファイルを読み込みます。
-2.  **Gemini API連携**: `call_gemini()` 関数を通じて Google Gemini API を呼び出し、読み込んだコードベースのコンテキストに基づいてドキュメントコンテンツを生成します。
-3.  **ルートREADME更新**: `update_root_readme()` 関数が、プロジェクト全体の概要、ディレクトリ構成図、各エージェントの役割などを記述したルートディレクトリの `README.md` を生成・更新します。
-4.  **エージェント別README更新**: `update_agent_readmes()` 関数が、各エージェントの機能詳細、目的、実行方法、依存モジュール、ファイル構成などを記述した個別の `README.md` を生成・更新します。
-
-これにより、プロジェクトのドキュメントを常に最新の状態に保ち、手動でのドキュメント更新作業の負担を軽減します。
+| ファイル名 | 説明 |
+| :--------- | :--- |
+| `main.py` | このエージェントの主要な実行スクリプトです。リポジトリ内のコードベースを読み込み、`google-generativeai`モデルに`README.md`の生成を依頼し、結果を対応するディレクトリに書き込みます。ルートの`README.md`と、Pythonファイルを含むすべてのサブディレクトリの`README.md`の生成・更新を調整します。 |
 
 ## 実行方法
 
-このエージェントを実行するには、まず以下の環境変数を設定する必要があります。
-
-*   `GOOGLE_AI_STUDIO_API_KEY`: Google Gemini API にアクセスするためのAPIキー。
-
-ルートディレクトリから、以下のコマンドを実行してください。
+このエージェントは、以下のコマンドで実行できます。`main.py`は、プロジェクトルートと、`agents/`および`common/`配下にあるPythonファイルを含むすべてのサブディレクトリの`README.md`を自動的に更新します。
 
 bash
 python agents/tech_readme_updater/main.py
 
 
-実行後、プロジェクトのルートディレクトリおよび `agents/` 配下の各エージェントディレクトリに `README.md` ファイルが生成または更新されます。
+## 環境変数
 
-## 依存モジュール
+このエージェントの実行には、以下の環境変数を設定する必要があります。
 
-このエージェントが直接依存しているPythonモジュールは以下の通りです。
-
-*   `google-generativeai`: Google Gemini API との連携に使用します。
-*   `python-dotenv`: `.env` ファイルから環境変数をロードするために使用します。
-
-`common/` ディレクトリ内の共通モジュール（例: `common/discord.py`, `common/scrapers/yahoo.py` など）には直接依存していません。ただし、このエージェントが他のエージェントの `README.md` を生成する際には、それらのエージェントが `common/` モジュールに依存している事実も考慮してドキュメントを作成します。
-
-## ファイル構成
-
-このエージェントのディレクトリ構成は以下の通りです。
-
-
-agents/
-└── tech_readme_updater/
-    └── main.py
-
-
-*   `main.py`: このエージェントの主要なロジックが記述されています。リポジトリ内のファイル読み込み、Gemini APIの呼び出し、READMEファイルの生成・更新処理が実装されています。
+| 環境変数名 | 説明 |
+| :--------- | :--- |
+| `GOOGLE_AI_STUDIO_API_KEY` | Google AI Studio (Gemini API) にアクセスするためのAPIキーです。`genai.configure(api_key=API_KEY)` を通じてモデル認証に使用されます。 |
