@@ -25,10 +25,10 @@ def has_python_files(directory):
     return False
 
 
-def read_repository_files():
-    """リポジトリ内の主要なファイルを読み込む"""
+def read_repository_files(max_chars=50000):
+    """リポジトリ内の主要なファイルを読み込む（サイズ制限付き）"""
     file_contents = ""
-    ignore_list = {'.git', '.venv', '__pycache__', '.vscode', '.github', '.gemini', 'node_modules'}
+    ignore_list = {'.git', '.venv', '__pycache__', '.vscode', '.github', '.gemini', 'node_modules', 'outputs'}
     target_exts = {'.py', '.yml', '.json', '.txt'}
 
     for root, dirs, files in os.walk(PROJECT_ROOT):
@@ -44,23 +44,40 @@ def read_repository_files():
                 rel_path = os.path.relpath(path, PROJECT_ROOT)
                 try:
                     with open(path, 'r', encoding='utf-8') as f:
-                        file_contents += f"\n--- File: {rel_path} ---\n{f.read()}\n"
+                        content = f.read()
+                        # 大きすぎるファイルは先頭部分のみ
+                        if len(content) > 5000:
+                            content = content[:5000] + "\n... (truncated)"
+                        file_contents += f"\n--- File: {rel_path} ---\n{content}\n"
                 except Exception:
                     pass
+
+        # サイズ制限チェック
+        if len(file_contents) > max_chars:
+            file_contents = file_contents[:max_chars] + "\n... (truncated due to size limit)"
+            break
+
     return file_contents
 
 
-def call_gemini(prompt):
-    """Gemini APIを呼び出すヘルパー関数"""
-    try:
-        print("  Calling Gemini API...")
-        resp = model.generate_content(prompt)
-        result = resp.text.replace("```markdown", "").replace("```", "").strip()
-        print(f"  Gemini response received ({len(result)} chars)")
-        return result
-    except Exception as e:
-        print(f"  ERROR: Gemini API call failed: {e}")
-        return None
+def call_gemini(prompt, max_retries=2):
+    """Gemini APIを呼び出すヘルパー関数（リトライ付き）"""
+    for attempt in range(max_retries + 1):
+        try:
+            print(f"  Calling Gemini API (attempt {attempt + 1})...")
+            resp = model.generate_content(prompt)
+            result = resp.text.replace("```markdown", "").replace("```", "").strip()
+            print(f"  Gemini response received ({len(result)} chars)")
+            return result
+        except Exception as e:
+            print(f"  ERROR: Gemini API call failed: {e}")
+            if attempt < max_retries:
+                print(f"  Retrying...")
+                import time
+                time.sleep(2)
+            else:
+                return None
+    return None
 
 
 def update_readme(target_path, readme_type, context):
@@ -145,8 +162,10 @@ README.md の中身（Markdown）のみ
         with open(readme_path, "w", encoding="utf-8") as f:
             f.write(content)
         print(f"  -> {rel_path}/README.md updated successfully.")
+        return True
     else:
         print(f"  -> FAILED: No content generated for {rel_path}/README.md")
+        return False
 
 
 def find_python_directories():
@@ -184,9 +203,15 @@ if __name__ == "__main__":
     context = read_repository_files()
     print(f"Context size: {len(context)} chars")
 
-    # ルートのREADME更新
+    results = {"success": [], "failed": []}
+
+    # ルートのREADME更新（最優先）
     print("\n" + "-" * 50)
-    update_readme(PROJECT_ROOT, "root", context)
+    print("Updating ROOT README...")
+    if update_readme(PROJECT_ROOT, "root", context):
+        results["success"].append("root")
+    else:
+        results["failed"].append("root")
 
     # Pythonファイルが存在するディレクトリのREADME更新
     print("\n" + "-" * 50)
@@ -197,8 +222,20 @@ if __name__ == "__main__":
 
     print()
     for dir_path in python_dirs:
-        update_readme(dir_path, "subdir", context)
+        rel = os.path.relpath(dir_path, PROJECT_ROOT)
+        if update_readme(dir_path, "subdir", context):
+            results["success"].append(rel)
+        else:
+            results["failed"].append(rel)
 
+    # 結果サマリー
     print("\n" + "=" * 50)
-    print("All updates finished.")
+    print("SUMMARY")
     print("=" * 50)
+    print(f"Success: {len(results['success'])} - {results['success']}")
+    print(f"Failed:  {len(results['failed'])} - {results['failed']}")
+    print("=" * 50)
+
+    # 1つでも失敗があれば終了コード1
+    if results["failed"]:
+        sys.exit(1)
