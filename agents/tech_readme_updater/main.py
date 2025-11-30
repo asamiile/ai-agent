@@ -53,10 +53,13 @@ def read_repository_files():
 def call_gemini(prompt):
     """Gemini APIを呼び出すヘルパー関数"""
     try:
+        print("  Calling Gemini API...")
         resp = model.generate_content(prompt)
-        return resp.text.replace("```markdown", "").replace("```", "").strip()
+        result = resp.text.replace("```markdown", "").replace("```", "").strip()
+        print(f"  Gemini response received ({len(result)} chars)")
+        return result
     except Exception as e:
-        print(f"Error generating content: {e}")
+        print(f"  ERROR: Gemini API call failed: {e}")
         return None
 
 
@@ -141,7 +144,9 @@ README.md の中身（Markdown）のみ
         readme_path = os.path.join(target_path, "README.md")
         with open(readme_path, "w", encoding="utf-8") as f:
             f.write(content)
-        print(f"  -> {rel_path}/README.md updated.")
+        print(f"  -> {rel_path}/README.md updated successfully.")
+    else:
+        print(f"  -> FAILED: No content generated for {rel_path}/README.md")
 
 
 def find_python_directories():
@@ -170,15 +175,30 @@ def find_python_directories():
 
 
 if __name__ == "__main__":
-    print("Reading repository...")
+    print("=" * 50)
+    print("README Updater Started")
+    print("=" * 50)
+    print(f"PROJECT_ROOT: {PROJECT_ROOT}")
+
+    print("\nReading repository files...")
     context = read_repository_files()
+    print(f"Context size: {len(context)} chars")
 
     # ルートのREADME更新
+    print("\n" + "-" * 50)
     update_readme(PROJECT_ROOT, "root", context)
 
     # Pythonファイルが存在するディレクトリのREADME更新
+    print("\n" + "-" * 50)
     python_dirs = find_python_directories()
+    print(f"Found {len(python_dirs)} directories with Python files:")
+    for d in python_dirs:
+        print(f"  - {os.path.relpath(d, PROJECT_ROOT)}")
+
+    print()
     for dir_path in python_dirs:
         update_readme(dir_path, "subdir", context)
 
-    print("\nAll updates finished.")
+    print("\n" + "=" * 50)
+    print("All updates finished.")
+    print("=" * 50)
